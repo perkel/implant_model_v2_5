@@ -63,7 +63,7 @@ vtable_dir = 'v_tables/'
 if not os.path.exists(vtable_dir):
     os.makedirs(vtable_dir)
 
-date = '17Dec2025'
+date = '16March2026'
 resol = '_MedResolution_'
 rext_text = 'Rext' + str(round(res_ext))
 r_int_text = '_Rint' + str(round(res_int)) + '.dat'

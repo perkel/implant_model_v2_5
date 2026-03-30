@@ -836,6 +836,7 @@ def inverse_model_multi(mode):  # Start this script
                     [dist_corr[scen], dist_corr_p[scen]] = stats.pearsonr(1 - ct_vals, 1 - fitrposvals)
 
             else:
+                rpos_summary.append(fitrposvals)
                 rposerrs = np.empty(NELEC)
                 rpos_err_metric = np.nan
                 rpos_err_summary[scen] = np.nan

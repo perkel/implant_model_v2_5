@@ -22,7 +22,7 @@ STD_TEXT = 'STDR' + str(ACT_STDREL)
 STD_TEXT = STD_TEXT.replace('.', '_')
 
 # File locations
-sigmaVals = [0, 0.9]  # Always explore monopolar stimulation and one value of sigma for triploar
+sigmaVals = [0.0, 0.9]  # Always explore monopolar stimulation and one value of sigma for triploar
 # can be overridden for individual subjects
 # behaviorVals = [0, 0]  # change to [0,1] if looking at M levels
 
@@ -96,7 +96,7 @@ global scenarios
 
 
 # Actual subject data. For inverse model only
-# scenarios = ['S57']  # paper "good fit" examples. Figure 7
+# scenarios = ['A023R']  # paper "good fit" examples. Figure 7
 scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80', 'S22','S29','S38','S40', 'S41','S42','S43','S46','S47','S48','S49R','S50','S52','S53','S54','S55','S56','S57']
 # scenarios = ['S29', 'S56']  # paper "poor fit" examples. Figure 8
 # scenarios = ['A002R', 'A005L', 'A014L', 'A022L', 'A022R', 'A023R', 'A024L']
@@ -126,7 +126,7 @@ elif RE_TEXT == 'RE125':
     FIELDTABLE = '3June2024_MedResolution_Rext125_nonans.dat'
 elif RE_TEXT == 'RE250':
     if RI_TEXT == 'RI70':
-        FIELDTABLE = '17Dec2025_MedResolution_Rext250_Rint70_nonans.dat'
+        FIELDTABLE = '16March2026_MedResolution_Rext250_Rint70_nonans.dat'
     elif RI_TEXT == 'RI250':
         FIELDTABLE = '16June2024_MedResolution_Rext250_Rint250_nonans.dat'
 
