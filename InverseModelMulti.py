@@ -38,7 +38,7 @@ import calc_ecap as c_ecap
 from common_params import *  # import common values across all models
 
 # User adjustable parameters
-fit_mode = 'combined'  # Which variable(s) to fit? Alternatives are 'combined', 'rpos' or 'survival'
+fit_mode = 'survival'  # Which variable(s) to fit? Alternatives are 'combined', 'rpos' or 'survival'
 # fit_using   # The fit_measures variable says how much relative weighting should be placed on each component.
 ifPlot = True  # Whether to plot output at end
 unsupervised = True  # Makes & saves summary plots but does not display them and wait for user input before proceeding
@@ -105,7 +105,7 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
     weights[3] = sim_params['run_info']['fit_measures']['ecap']
 
     if weights[0] > 0.0:
-        sim_params['channel']['sigma'] = 0.0   # 0 if looking at M levels
+        sim_params['channel']['sigma'] = sigvals[0]   # 0 if looking at M levels
         sim_params['channel']['behavior'] = 0
         thresh_mp = gt.get_thresholds(e_field, f_par, sim_params)
         mp_err = np.nanmean(np.abs(np.subtract(thresh_mp[0], thr_goals['thrmp_db'])))
@@ -126,7 +126,7 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
 
     if weights[2] > 0.0:
         # mp_mcl stuff here
-        sim_params['channel']['sigma'] = 0.0  # 0 if looking at M levels
+        sim_params['channel']['sigma'] = sigvals[0]  # 0 if looking at M levels
         sim_params['channel']['behavior'] = 1
         mp_mcl_db = gt.get_thresholds(e_field, f_par, sim_params)
         mp_mcl_diff = np.subtract(mp_mcl_db[0], thr_goals['mp_mcl_db'])
@@ -139,7 +139,7 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
         ec_thresh = 1000  # neurons
         nstim = 500
         # need to reset sigma to 0.0
-        simParams['channel']['sigma'] = 0.0
+        simParams['channel']['sigma'] = sigvals[0]
         ecap = c_ecap.calc_ecap(act_vals, f_par, simParams, ec_thresh, thr_sim_db[:, i], nstim)
         ecap_diff = np.subtract(ecap, thr_goals['ecap'])
         ecap_err = np.nanmean(np.abs(np.subtract(ecap, thr_goals['ecap'])))
@@ -720,10 +720,13 @@ def inverse_model_multi(mode):  # Start this script
                             lb = 0.1
                             ub = 1.0
                         par.add('v_%i' % i, value=initvec[i], min=lb, max=ub)
+        else:  # none of the planned fit_modes
+            raise Exception('Incorrect fit_mode ', fit_mode, ' provided.')
+
 
         # Now do the main fitting for all electrodes at once
         minner = Minimizer(objectivefunc_lmfit_all, par, nan_policy='omit',
-                           fcn_args=(sigmaVals, simParams, fp, act_vals, thr_data))
+                           fcn_args=(sigVals, simParams, fp, act_vals, thr_data))
 
         if use_fwd_model:
             result = minner.minimize(method='least_squares', ftol=fit_tol, diff_step=0.1)
@@ -766,10 +769,10 @@ def inverse_model_multi(mode):  # Start this script
         simParams['neurons']['nsurvival'] = surv_full.surv_full(simParams['electrodes']['zpos'], fitsurvvals,
                                                                 simParams['grid']['z'])
 
-        simParams['channel']['sigma'] = 0  # sigvals[0]
+        simParams['channel']['sigma'] = sigVals[0]
         simParams['channel']['behavior'] = 0
         thrsimmp = gt.get_thresholds(act_vals, fp, simParams)
-        simParams['channel']['sigma'] = sigmaVals[1]
+        simParams['channel']['sigma'] = sigVals[1]
         #simParams['channel']['behavior'] = 1 for M levels
         simParams['channel']['behavior'] = 0
         thrsimtp = gt.get_thresholds(act_vals, fp, simParams)
@@ -908,11 +911,11 @@ def inverse_model_multi(mode):  # Start this script
         save_file_name = INVOUTPUTDIR + scenario + '_fitResults_' + fit_mode + '.npy'
         if use_fwd_model:
             np.save(save_file_name,
-                    np.array([sigmaVals, rposvals, survvals, thrsim, thrtargs, initvec, [fitrposvals, fitsurvvals],
+                    np.array([sigVals, rposvals, survvals, thrsim, thrtargs, initvec, [fitrposvals, fitsurvvals],
                               rposerrs, rpos_err_metric, survivalerrs], dtype=object))
         else:
             np.save(save_file_name,
-                    np.array([sigmaVals, rposvals, survvals, thrsim, thrtargs, initvec, [fitrposvals, fitsurvvals],
+                    np.array([sigVals, rposvals, survvals, thrsim, thrtargs, initvec, [fitrposvals, fitsurvvals],
                               rposerrs, rpos_err_metric, survivalerrs, ct_vals], dtype=object))
 
         np.save(INVOUTPUTDIR + scenario + '_simParams_inv', simParams)
