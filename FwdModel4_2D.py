@@ -135,7 +135,7 @@ def fwd_model_2d(mode):
         rlvec = NEURONS['neur_per_clust'] * (rlvec ** NEURONS['power'])
         rlvltable = np.stack((avec, rlvec))  # start with the e-field(s) created above, but remove the current scaling
 
-        n_sig = len(sigmaVals)
+        n_sig = len(sigmaVals)  # this comes from common_params
         # n_behavior = len(behaviorVals)
         #  how many entries in the neuronact 3rd dimension? One each for mp & tp threshold plus 1 for mp_mcl
         ndim = 0
