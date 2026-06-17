@@ -119,8 +119,19 @@ def fwd_model_5(mode):
             with open(outfile, mode='w') as data_file:
                 data_writer = csv.writer(data_file, delimiter=',', quotechar='"')
                 for row in range(0, NELEC):
-                    data_writer.writerow([row, surv_vals[row], electrodes['rpos'][row], thr_sim_db[row, 0],
+                    # TODO Need to have all values of sigma saved on this line. can do brute-force for
+                    # 0, 1 or 2 or 3 values of sigma. Or there must be a pythonic way
+                    if n_sig == 1:
+                        data_writer.writerow([row, surv_vals[row], electrodes['rpos'][row], thr_sim_db[row, 0]])
+                    elif n_sig == 2:
+                        data_writer.writerow([row, surv_vals[row], electrodes['rpos'][row], thr_sim_db[row, 0],
                                           thr_sim_db[row, 1]])
+                    elif n_sig == 3:
+                        data_writer.writerow([row, surv_vals[row], electrodes['rpos'][row], thr_sim_db[row, 0],
+                                              thr_sim_db[row, 1], thr_sim_db[row, 2]])
+                    else:
+                        data_writer.writerow([row, surv_vals[row], electrodes['rpos'][row]])
+
             data_file.close()
 
         if 'mp_mcl' in all_measures:  # for M levels
