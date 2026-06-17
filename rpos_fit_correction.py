@@ -143,7 +143,7 @@ def fig9_summary():
         ct_dist = 1 - rpos_vals_0[idx]
         fit_dist = 1 - rpos_fit_vals_0[idx]
         err_dist[idx, :] = fit_dist - ct_dist
-        axs1[0, 0].plot(ct_dist, fit_dist, '.', color=fig9_colors[idx, :])
+        axs1[0, 0].plot(fit_dist, ct_dist, '.', color=fig9_colors[idx, :])
 
         [slope, intercept] = np.polyfit(ct_dist, fit_dist, 1)  # linear fit
         [err_slope, err_intercept] = np.polyfit(fit_dist, err_dist[idx], 1)
@@ -157,23 +157,29 @@ def fig9_summary():
         maxx = np.max(ct_dist)
         # if idx == case:
         #     axs1[0, 0].plot((minx, maxx), (minx*slope + intercept, maxx*slope + intercept), '-', c=fig9_colors[idx, :])  # plot line
+        # axs1[0, 1].plot(fit_dist, err_dist[idx], '.', color=fig9_colors[idx, :])  # plot error v. fit dist
         axs1[0, 1].plot(fit_dist, err_dist[idx], '.', color=fig9_colors[idx, :])  # plot error v. fit dist
 
-    axs1[0, 0].set_xlabel('Measured electrode distance (mm)')  # Cosmetic labeling
-    axs1[0, 0].set_ylabel('Fit electrode distance (mm)')
+    axs1[0, 0].set_xlabel('Fit electrode distance (mm)')  # Cosmetic labeling
+    axs1[0, 0].set_ylabel('CT electrode distance (mm)')
     axs1[0, 0].spines['top'].set_visible(False)
     axs1[0, 0].spines['right'].set_visible(False)
     axs1[0, 0].set_ylim(0, 2.0)
+    # unity line
+    axs1[0, 0].plot((0, 2), (0, 2), ':')
     axs1[0, 1].set_xlabel('Fit electrode distance (mm)')
     axs1[0, 1].set_ylabel('Fit error (mm)')
     axs1[0, 1].spines['top'].set_visible(False)
     axs1[0, 1].spines['right'].set_visible(False)
-    axs1[0, 1].set_ylim(-1.2, 1.2)
+    axs1[0, 1].set_ylim(-2, 2)
 
     mean_slope = np.mean(summary_error[:, 2])
     mean_intercept = np.mean(summary_error[:, 3])
     mean_err_slope = np.mean(summary_error[:, 7])
     mean_err_intercept = np.mean(summary_error[:, 8])
+
+    # calculate fit of error v. fit dist from all points together
+    new_sl, new_int = np.polyfit(1-rpos_fit_vals_0.flatten(), err_dist[:-3, :].flatten(), 1)
 
     #  plot the  line with average slope and intercept
     axs1[0, 1].plot((0, 2), (mean_err_intercept, (2*mean_err_slope) + mean_err_intercept), '-')
@@ -186,7 +192,9 @@ def fig9_summary():
         fit_dist = 1 - rpos_fit_vals_0[idx]
 
         # call function to make the correction and return corrected distances and errors
-        corr_fit_dist, mean_error = correct_error(fit_dist, mean_err_slope, mean_err_intercept)
+        # corr_fit_dist, mean_error = correct_error(fit_dist, mean_err_slope, mean_err_intercept)
+        corr_fit_dist, mean_error = correct_error(fit_dist, 0.347, -0.66)
+
         # mean_error = (fit_dist*mean_err_slope) + mean_err_intercept  # obsolete
         # corr_fit_dist = fit_dist - mean_error  # obsolete
 
@@ -229,10 +237,10 @@ def fig9_summary():
     start_pt = coeffs[1]
     end_pt = coeffs[1] + (coeffs[0]*2.0)
     axs1[0, 0].plot([0, 2], [start_pt, end_pt], color='black')
-    axs1[1, 1].set_ylim(-1.2, 1.2)
+    axs1[1, 1].set_ylim(-2, 2)
     axs1[1, 1].spines['top'].set_visible(False)
     axs1[1, 1].spines['right'].set_visible(False)
-    # # Now for the second resistivity
+    # now for corrected fit
     coeffs = np.polyfit(ct_dist.flatten(), corr_fit_dist.flatten(), 1)
     start_pt = coeffs[1]
     end_pt = coeffs[1] + (coeffs[0]*2.0)
@@ -272,6 +280,15 @@ def fig9_summary():
         axs2[row, 2].set_xlim(0, 2.0)
         axs2[row, 2].set_ylim(0.0, 2.0)
 
+    plt.show()
+
+    fig3, axs3 = plt.subplots(2, 2, figsize=(8, 8))
+    fig3.tight_layout(pad=3)  # just 3 test cases
+    xxx = 1-rpos_fit_vals_0.flatten()
+    yyy = err_dist[:-3, :].flatten()
+    new_sl2, new_int2 = np.polyfit(xxx, yyy, 1)
+    axs3[0, 0].plot(xxx, yyy, '.')
+    axs3[0, 0].plot((0, 2), (new_int2, (2*new_sl2)+new_int2), ':')
     plt.show()
 
 
