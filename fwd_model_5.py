@@ -55,7 +55,8 @@ def fwd_model_5(mode):
     GRID['r'] = fp['rspace']  # only 1 of the 3 cylindrical dimensions can be a vector (for CYLINDER3D_MAKEPROFILE)
 
     if_plot = True  # Whether to plot the results
-    n_sig = len(sigmaVals)
+    # n_sig = len(sigmaVals)
+    n_sig = len(all_sigs)
 
     for scenario in scenarios:
         # if this scenario is a subject, set use_forward_model to be false
@@ -106,11 +107,11 @@ def fwd_model_5(mode):
             raise ('Ending script. One or more evaluation points are inside cylinder;\
              not appropriate for neural activation.')
 
-        if 'mp' or 'tp' in all_measures:  # TODO -- may have a logic issue here if we don't want mp and tp
+        if 'threshold' in all_measures:  # TODO -- may have a logic issue here if we don't want mp and tp
             # Determine threshold for each value of sigma
             for i in range(0, n_sig):  # number of sigma values to test
                 simParams['channel']['behavior'] = 0  # Regular threshold search
-                simParams['channel']['sigma'] = sigmaVals[i]
+                simParams['channel']['sigma'] = all_sigs[i]
                 [thr_sim_db[:, i], neuron_vals] = gt.get_thresholds(act_vals, fp, simParams)
 
             # Write a csv file
