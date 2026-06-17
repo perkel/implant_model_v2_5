@@ -427,8 +427,6 @@ def inverse_model_combined(mode):  # Start this script
                 ax6 = plt.contour(rpos_grid_vals, surv_grid_vals[2:], tripol_thr[2:, :], [tptarg], colors='red')
                 ax6.axes.set_xlabel('Rpos (mm)')
                 ax6.axes.set_ylabel('Survival fraction')
-                ax5.axes.xaxis.set_label('Rpos (mm)')
-                ax5.axes.yaxis.set_label('Survival fraction')
                 mpcontour = ax5.allsegs[0]
                 tpcontour = ax6.allsegs[0]
                 if not ifPlotGuessContours:
@@ -483,8 +481,8 @@ def inverse_model_combined(mode):  # Start this script
 
                 elif nsols[i] == 1:  # unique solution
                     print('electrode: ', i, ';  one solution: ', x, y)
-                    rp_guess = x
-                    sv_guess = y
+                    rp_guess = x[0]
+                    sv_guess = y[0]
                     ax_guess = plt.plot(rp_guess, sv_guess, 'x')
 
                 else:  # multiple solutions
