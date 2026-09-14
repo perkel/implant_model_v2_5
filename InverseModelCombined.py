@@ -28,7 +28,7 @@ import intersection as intsec
 import set_scenario as s_scen
 import load_fwd_csv_data as lcsv
 import surv_full
-import get_thresholds as gt
+import get_thresholds2 as gt  # brentq-based bisection replacement; see get_thresholds2.py
 import subject_data
 import plot_inverse_results
 from common_params import *  # import common values across all models
@@ -58,25 +58,29 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
 
     sim_params['electrodes']['rpos'] = np.zeros(nel)
     if not tp_extend:
+        # Note: rpos[0]/rpos[-1] and tempsurv/tempsurv2/surv_full below don't depend on the loop
+        # variable 'i' -- only the final values (after all rpos entries are set) are ever used, so
+        # they're computed once after the loop instead of being recomputed (and surv_full re-run)
+        # on every one of the nel-2 iterations.
         for i in range(0, nel - 2):
             varname = 'v_%i' % i
             myvalue = vals[varname]
             sim_params['electrodes']['rpos'][i + 1] = myvalue
-            sim_params['electrodes']['rpos'][0] = sim_params['electrodes']['rpos'][1]
-            sim_params['electrodes']['rpos'][-1] = sim_params['electrodes']['rpos'][-2]
+        sim_params['electrodes']['rpos'][0] = sim_params['electrodes']['rpos'][1]
+        sim_params['electrodes']['rpos'][-1] = sim_params['electrodes']['rpos'][-2]
 
-            tempsurv = np.zeros(nel - 2)
-            tempsurv2 = np.zeros(nel)
-            for j, loopval in enumerate(range(nel - 2, 2 * (nel - 2))):
-                varname = 'v_%i' % (j + nel - 2)
-                # print('i: ', i, ' loopval: ', loopval, ' varname: ', varname)
-                myvalue = vals[varname]
-                tempsurv[j] = myvalue
-            tempsurv2[1:nel - 1] = tempsurv
-            tempsurv2[0] = tempsurv2[1]
-            tempsurv2[-1] = tempsurv2[-2]
-            sim_params['neurons']['nsurvival'] = surv_full.surv_full(sim_params['electrodes']['zpos'],
-                                                                     tempsurv2, simParams['grid']['z'])
+        tempsurv = np.zeros(nel - 2)
+        tempsurv2 = np.zeros(nel)
+        for j, loopval in enumerate(range(nel - 2, 2 * (nel - 2))):
+            varname = 'v_%i' % (j + nel - 2)
+            # print('j: ', j, ' loopval: ', loopval, ' varname: ', varname)
+            myvalue = vals[varname]
+            tempsurv[j] = myvalue
+        tempsurv2[1:nel - 1] = tempsurv
+        tempsurv2[0] = tempsurv2[1]
+        tempsurv2[-1] = tempsurv2[-2]
+        sim_params['neurons']['nsurvival'] = surv_full.surv_full(sim_params['electrodes']['zpos'],
+                                                                 tempsurv2, simParams['grid']['z'])
 
     else:
         for i in range(0, nel):
@@ -296,7 +300,7 @@ def inverse_model_combined(mode):  # Start this script
         else:
             subject = scenario
             retval = subject_data.subj_thr_data(subject)
-            thr_data = {'thrmp_db': retval[0], 'thrmp': [], 'thrtp_db': retval[1], 'thrtp': [], 'thrtp_sigma': 0.9}
+            thr_data = {'thrmp_db': retval[0], 'thrmp': [], 'thrtp_db': retval[1], 'thrtp': [], 'thrtp_sigma': TP_SIGMA}
             sigVals = retval[2]
             espace = retval[3]
 
