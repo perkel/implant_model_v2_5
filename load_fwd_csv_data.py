@@ -21,7 +21,7 @@ def load_fwd_csv_data(loadfile, mode):
     if mode == 'mp_tp':
         # file format
         thr_mp_col = 3
-        thr_tp_col = 4
+        thr_tp_col = 5
         thisrow = 0
         with open(loadfile, mode='r') as data_file:
             data_reader = csv.reader(data_file, delimiter=',', quotechar='"')
@@ -45,8 +45,6 @@ def load_fwd_csv_data(loadfile, mode):
 
                 thr_data['thrtp'][thisrow] = np.power(10.0, (thr_data['thrtp_db'][-1] / 20))
 
-            # thr_data['thrmp_db'] = np.array(thr_data['thrmp_db'])
-            # thr_data['thrtp_db'] = np.array(thr_data['thrtp_db'])
                 thisrow += 1
 
     elif mode == 'mp_mcl':
