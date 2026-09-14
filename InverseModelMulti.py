@@ -38,11 +38,11 @@ import calc_ecap as c_ecap
 from common_params import *  # import common values across all models
 
 # User adjustable parameters
-fit_mode = 'survival'  # Which variable(s) to fit? Alternatives are 'combined', 'rpos' or 'survival'
+fit_mode = 'combined'  # Which variable(s) to fit? Alternatives are 'combined', 'rpos' or 'survival'
 # fit_using   # The fit_measures variable says how much relative weighting should be placed on each component.
 ifPlot = True  # Whether to plot output at end
 unsupervised = True  # Makes & saves summary plots but does not display them and wait for user input before proceeding
-ifPlotGuessContours = False  # Option to plot initial guesses for parameters given to the fitting algorithm
+ifPlotGuessContours = True  # Option to plot initial guesses for parameters given to the fitting algorithm
 fit_tol = 0.1  # Fit tolerance for subject fits
 use_minimizer = True  # If true, uses the lmfit wrapper around scipy optimize. Otherwise, vanilla scipy.minimize
 if_save_npy = True
@@ -97,7 +97,7 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
     # Call for monopolar then tripolar
     sim_params['channel']['sigma'] = sigvals[0]
     sim_params['channel']['behavior'] = 0
-    thresh_mp = gt.get_thresholds(e_field, f_par, sim_params)
+    # thresh_mp = gt.get_thresholds(e_field, f_par, sim_params)
     weights = np.zeros(len(sim_params['run_info']['fit_measures']))
     weights[0] = sim_params['run_info']['fit_measures']['mp']
     weights[1] = sim_params['run_info']['fit_measures']['tp']
@@ -108,8 +108,8 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
         sim_params['channel']['sigma'] = sigvals[0]   # 0 if looking at M levels
         sim_params['channel']['behavior'] = 0
         thresh_mp = gt.get_thresholds(e_field, f_par, sim_params)
-        mp_err = np.nanmean(np.abs(np.subtract(thresh_mp[0], thr_goals['thrmp_db'])))
         mp_diff = np.subtract(thresh_mp[0], thr_goals['thrmp_db'])
+        mp_err = np.nanmean(np.abs(mp_diff))
     else:
         mp_diff = np.zeros(NELEC)
         mp_err = 0.0
@@ -118,8 +118,9 @@ def objectivefunc_lmfit_all(par, sigvals, sim_params, f_par, e_field, thr_goals)
         sim_params['channel']['sigma'] = sigvals[1]
         sim_params['channel']['behavior'] = 0
         thresh_tp = gt.get_thresholds(e_field, f_par, sim_params)
-        tp_err = np.nanmean(np.abs(np.subtract(thresh_tp[0][1:nel - 1], thr_goals['thrtp_db'][1:nel - 1])))
         tp_diff = np.subtract(thresh_tp[0][1:nel - 1], thr_goals['thrtp_db'][1:nel - 1])
+        tp_err = np.nanmean(np.abs(tp_diff))
+
     else:
         tp_diff = np.zeros(NELEC)
         tp_err = 0.0
@@ -285,6 +286,7 @@ def inverse_model_multi(mode):  # Start this script
         #  TODO this needs updating depending on which data will be used (fit_using variable)
         if use_fwd_model:
             [survVals, electrodes['rpos'], espace] = s_scen.set_scenario(scenario, NELEC)
+            sigVals = sigmaVals
         else:
             subject = scenario
             retval = subject_data.subj_thr_data(subject)  # TODO should read subject data from a file, not code
@@ -302,8 +304,11 @@ def inverse_model_multi(mode):  # Start this script
         es_text = '_espace_' + e_txt
 
         #  TODO Need to generalize loading 2D data according to 'fit_using'
-        if fit_measures['mp'] > 0.0:
-            datafile = FWDOUTPUTDIR + "Monopolar_2D_" + STD_TEXT + es_text + ".csv"
+        if fit_measures['mp'] > 0.0:  # using 'mp' now for the lowest of the sigma values (e.g. if they are [0.5, 0.09]
+            sigval = sigVals[0]
+            sigtext = f"{sigval:.1f}".replace(".", "_")
+            datafile = FWDOUTPUTDIR + '2D_' + sigtext + '_' + STD_TEXT + es_text + '.csv'
+            # datafile = FWDOUTPUTDIR + "Monopolar_2D_" + STD_TEXT + es_text + ".csv"
             file = open(datafile)
             numlines = len(file.readlines())
             file.close()
@@ -319,7 +324,10 @@ def inverse_model_multi(mode):  # Start this script
 
         if fit_measures['tp'] > 0.0:
             # Load tripolar data
-            datafile = FWDOUTPUTDIR + "Tripolar_09_2D_" + STD_TEXT + es_text + ".csv"
+            sigval = sigVals[1]
+            sigtext = f"{sigval:.1f}".replace(".", "_")
+            datafile = FWDOUTPUTDIR + '2D_' + sigtext + '_' + STD_TEXT + es_text + '.csv'
+            # datafile = FWDOUTPUTDIR + "Tripolar_09_2D_" + STD_TEXT + es_text + ".csv"
             file = open(datafile)
             numlines = len(file.readlines())
             file.close()
@@ -370,6 +378,7 @@ def inverse_model_multi(mode):  # Start this script
         array_mid = (ARRAY_BASE[0] + ARRAY_BASE[-1]) / 2.0
         electrodes['zpos'] = (ELEC_MIDPOINT - array_mid) + ARRAY_BASE
 
+        # 2D data loaded. Now load threshold data for this scenario or subject
         if use_fwd_model:
             if fit_measures['mp'] > 0.0:  # get mp and tp data
                 csv_file = FWDOUTPUTDIR + 'FwdModelOutput_thresh_' + scenario + '.csv'
@@ -444,7 +453,7 @@ def inverse_model_multi(mode):  # Start this script
         simParams['cochlea'] = COCHLEA
         simParams['electrodes'] = electrodes
         simParams['channel'] = CHANNEL
-        simParams['channel']['sigma'] = 0.0
+        simParams['channel']['sigma'] = 0.0  ## TODO hardcoded sigma value ***
         thresholds = np.empty(NELEC)  # Array to hold threshold data for different simulation values
         thresholds[:] = np.nan
         fitrposvals = np.zeros(NELEC)
@@ -517,12 +526,19 @@ def inverse_model_multi(mode):  # Start this script
                     rp_guess = (mpx[mp_idx] + tpx[tp_idx]) / 2.0
                     sv_guess = (mpy[mp_idx] + tpy[tp_idx]) / 2.0
                     ax_guess = plt.plot(rp_guess, sv_guess, 'x')
+                    titletext = "sigvals: " + f"{sigVals[0]: .1f}" + ' and ' + f"{sigVals[1]: .1f}" + " thr: " + f"{mptarg: .1f}" + ' and ' + f"{tptarg: .1f}"
+                    plt.title(titletext)
 
                     # # print("no solutions. Closest: ", mp_idx, ' and ', tp_idx,
                     #       ' , leading to guesses of (position, survival): ', rp_guess, sv_guess)
 
                     print('electrode: ', i, ";  no solutions. Closest: ", mp_idx, ' and ', tp_idx,
                           ' , OVERRIDING to: (position, survival): ', rp_guess, sv_guess)
+
+                    # TODO change me back after testing
+                    rp_guess = -.5
+                    sv_guess = 0.8
+                    print('electrode: ', i, ';  no solutions. OVERRIDING to: (position, survival): ', rp_guess, sv_guess)
 
                 elif nsols[i] == 1:  # unique solution
                     print('electrode: ', i, ';  one solution: ', x, y)
@@ -571,6 +587,15 @@ def inverse_model_multi(mode):  # Start this script
                     ax_guess = plt.plot(rp_guess, sv_guess, 'x')
 
                 if ifPlotGuessContours:
+                    plt.show()
+
+                    # addtional plot with distance rather than rpos
+                    plt.plot(1-mpx, mpy, 'k')
+                    plt.plot(1-tpx, tpy, 'r')
+                    plt.xlabel("Electrode distance (mm)")
+                    plt.ylabel("Survival probability (%)")
+                    titletext = "sigvals: " + f"{sigVals[0]: .1f}" + ' and ' + f"{sigVals[1]: .1f}" + " thr: " + f"{mptarg: .1f}" + ' and ' + f"{tptarg: .1f}"
+                    plt.title(titletext)
                     plt.show()
 
                 if hasattr(rp_guess, '__len__'):
@@ -730,7 +755,6 @@ def inverse_model_multi(mode):  # Start this script
 
         if use_fwd_model:
             result = minner.minimize(method='least_squares', ftol=fit_tol, diff_step=0.1)
-
         else:  # use CT data
             result = minner.minimize(method='least_squares', ftol=fit_tol, diff_step=0.1)
 
