@@ -1,10 +1,19 @@
 # Import critical packages
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.optimize as opt
+
 from common_params import *
 import pickle
 import csv
 from matplotlib.font_manager import findfont, FontProperties
 import matplotlib as mpl
+
+
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 
 def fig3_neuron_activation():
@@ -117,9 +126,11 @@ def fig3_neuron_activation():
         #     ax.set_title(titletext)
 
         n_p_c = sp['neurons']['neur_per_clust']
-        ax.plot(posvals, neuronact[survidxs[col], rposidxs[row], 0, 0, :]/n_p_c, '.',
+        mono_prof = neuronact[survidxs[col], rposidxs[row], 0, 0, :]/n_p_c
+        tripol_prof = neuronact[survidxs[col], rposidxs[row], 1, 0, :]/n_p_c
+        ax.plot(posvals, mono_prof, '.',
                 color='blue', linewidth=0.5)
-        ax.plot(posvals, neuronact[survidxs[col], rposidxs[row], 1, 0, :]/n_p_c, '.',
+        ax.plot(posvals, tripol_prof, '.',
                 color='red', linewidth=0.5)
         ax.set(xlabel='Longitudinal distance (mm)')
         if row == 1 and col == 0:
@@ -147,6 +158,20 @@ def fig3_neuron_activation():
 
             print('surv ', titletext, ' dist ', str(1 - plt_rpos_vals[row]), ' Thr: ', mono_thr[survidxs[col],
                         rposidxs[row]], ' and ', tripol_thr[survidxs[col], rposidxs[row]])
+
+        # find width at half height
+        first_idx = np.argwhere(mono_prof > (np.max(mono_prof)/2))
+        first_pt = posvals[first_idx[0]]
+        width_half_height = 2*np.abs(first_pt)
+        # find stddev of best-fit Gaussian
+        p0 = [0.05, 0.0, 1.0]
+        coeff, var_matrix = opt.curve_fit(gauss, posvals, mono_prof, p0=p0)
+        print('width_half_height', width_half_height)
+        print('coeffs: ', coeff)
+
+        resvec = gauss(posvals, *coeff)
+        ax.plot(posvals, resvec, color='green')
+
 
     # Save figure
     fig_filename = 'fig3_neuronact.pdf'
