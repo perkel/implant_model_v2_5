@@ -28,39 +28,45 @@ def new_sigmoid(actr, std, x):  # scaled to subtract the y-intercept and still a
     return yval
 
 
-def create_neural_profile(active_profile, rpos_vals):
-    n_z = active_profile.shape
-
-    # Extract local values from rpos_vals structure
-    act_ctr = rpos_vals['neurons']['act_ctr']
-    act_std = act_ctr * rpos_vals['neurons']['act_stdrel']
-    nsurvival = rpos_vals['neurons']['nsurvival']
+def compute_prop_const(rpos_vals):
+    """Proportionality constant used by create_neural_profile's 'proportional' rule.
+    It depends only on rpos_vals['neurons']['rlvl'], not on 'current', so callers that
+    invoke thr_function repeatedly with the same sim_params (e.g. the iterative solver
+    in get_thresholds.py) should compute this once and pass it in via thr_function's/
+    create_neural_profile's 'prop_const' argument instead of recomputing it every call."""
     rlvltable = rpos_vals['neurons']['rlvl']
+    return rlvltable[1][-1] / rlvltable[0][-1]
 
-    # Create neural excitation profile for each input activation profile #
-    neural_out = np.empty(n_z)
-    neural_out[:] = np.nan
+
+def create_neural_profile(active_profile, rpos_vals, prop_const=None):
+    # Extract local values from rpos_vals structure
+    neurons = rpos_vals['neurons']
+    act_ctr = neurons['act_ctr']
+    act_std = act_ctr * neurons['act_stdrel']
+    nsurvival = neurons['nsurvival']
 
     # scale sidelobes before computing absolute value
-    active_profile[active_profile < 0] = rpos_vals['neurons']['sidelobe'] * active_profile[active_profile < 0]
+    neg_mask = active_profile < 0
+    active_profile[neg_mask] *= neurons['sidelobe']
 
     # treat non-viable neurons depending on the desired algorithm
-    if rpos_vals['neurons']['rule'] == 'proportional':
-        atemp = new_sigmoid(act_ctr, act_std, active_profile[:])
-        prop_const = rlvltable[1][-1]/rlvltable[0][-1]  # proportionality constant
+    if neurons['rule'] == 'proportional':
+        atemp = new_sigmoid(act_ctr, act_std, active_profile)
+        if prop_const is None:  # not hoisted by the caller, so compute it here as before
+            prop_const = compute_prop_const(rpos_vals)
         neural_out = np.multiply(atemp*prop_const, nsurvival)
     else:  # could add other models here
-        raise 'Neural excitation model not recognized.'
+        raise ValueError('Neural excitation model not recognized.')
 
     return neural_out
 
 
-def thr_function(current, active_us, sim_params):  # simplified for scalar current
+def thr_function(current, active_us, sim_params, prop_const=None):  # simplified for scalar current
 
     active_profile = current * active_us  # Scale by current
 
     # Now call nonlinear sigmoidal activation function
-    neural_profile = create_neural_profile(active_profile, sim_params)
+    neural_profile = create_neural_profile(active_profile, sim_params, prop_const)
     ncount = np.nansum(neural_profile)
 
-    return [ncount, neural_profile, active_profile]
+    return (ncount, neural_profile, active_profile)
