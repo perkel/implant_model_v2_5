@@ -1,11 +1,12 @@
 # Subject data from cochlear implant users. Thresholds and CT data showing electrode placement
 import numpy as np
+from common_params import TP_SIGMA
 
 # from common_params import NELEC
 
 
 def subj_thr_data(subj):  # returns threshold data for a subject
-    thr_data = {'thrmp_db': [], 'thrmp': [], 'thrtp_db': [], 'thrtp': [], 'thrtp_sigma': 0.9}
+    thr_data = {'thrmp_db': [], 'thrmp': [], 'thrtp_db': [], 'thrtp': [], 'thrtp_sigma': TP_SIGMA}
     m_data = {'M': []}
     espace = 1.1  # default
 
