@@ -29,7 +29,7 @@ import fig3_neuron_activation
 def fwd_model_2d(mode):
 
     n_stim = 4000  # number of stim levels for ecap calculation
-    # TODO:  should loop on espace values. Looping could then be removed from the param_survey script
+    # TODO:  now loops on espace values. Looping could then be removed from the param_survey script
     if mode == 'main':
         espace_range = [0.85, 1.1]
 
@@ -135,18 +135,17 @@ def fwd_model_2d(mode):
         rlvec = NEURONS['neur_per_clust'] * (rlvec ** NEURONS['power'])
         rlvltable = np.stack((avec, rlvec))  # start with the e-field(s) created above, but remove the current scaling
 
-        n_sig = len(sigmaVals)  # this comes from common_params
+        n_sig = len(sigmaVals)  # sigmaVals and all_sigs come from common_params
+        na_sig = len(all_sigs)
         # n_behavior = len(behaviorVals)
         #  how many entries in the neuronact 3rd dimension? One each for mp & tp threshold plus 1 for mp_mcl
         ndim = 0
         for entry in all_measures:
-            if entry == 'mp':
-                ndim += 1
-            if entry == 'tp':
-                ndim += 1
+            if entry == 'threshold':
+                ndim += na_sig
             if entry == 'mp_mcl':
                 ndim += 1
-        thr_sim_db = np.empty((nSurv, nRpos, n_sig))  # Array for threshold data for different elecs and sigma values
+        thr_sim_db = np.empty((nSurv, nRpos, na_sig))  # Array for threshold data for different elecs and sigma values
         thr_sim_db[:] = np.nan
         neuronact = np.empty((nSurv, nRpos, ndim, 1, len(GRID['z'])))  # Only 1 electrode in this model
         neuronact[:] = np.nan
@@ -172,10 +171,11 @@ def fwd_model_2d(mode):
             for k, rpos in enumerate(rposVals):
                 simParams['electrodes']['rpos'] = rpos
 
-                if 'mp' or 'tp' in all_measures:
-                    # Calculate momopolar and tripolar thresholds
-                    for i in range(0, n_sig):  # number of sigma values to test
-                        simParams['channel']['sigma'] = sigmaVals[i]
+                if 'threshold' in all_measures:
+                    # Calculate thresholds for all sigma values in all_sigs in common_params
+                    for i in range(0, na_sig):  # number of sigma values to test
+                        simParams['channel']['sigma'] = all_sigs[i]
+                        # print('rposval: ', rpos, '; sigma = ', all_sigs[i])
                         tempvals = gt.get_thresholds(act_vals, fp, simParams)
                         thr_sim_db[j, k, i] = tempvals[0].item()
                         nexttemp2 = tempvals[1]
@@ -204,32 +204,27 @@ def fwd_model_2d(mode):
 
 
         # Write results to a CSV file
-        header1 = ['Monopolar thresholds', 'rpos values in columns']
-        header2 = ['Survival ']
-        for i, rpos in enumerate(rposVals):
-            header2 += str(rpos) + ', '
+        if 'threshold' in all_measures:
+            with open(outfile, mode='w') as data_file:
+                data_writer = csv.writer(data_file, delimiter=',', quotechar='"')
 
-        with open(outfile, mode='w') as data_file:
-            data_writer = csv.writer(data_file, delimiter=',', quotechar='"')
-            if 'mp' in all_measures:
-                data_writer.writerow(header1)
-                data_writer.writerow(header2)
-                for row, s_val in enumerate(survVals):
-                    data_writer.writerow([row, s_val, thr_sim_db[row, 0]])
+                for sig_idx, sig in enumerate(all_sigs):
+                    header1 = ['Thresholds for sig: ', sig, '; rpos values in columns']
+                    header2 = ['Survival ']
+                    for i, rpos in enumerate(rposVals):
+                        header2 += str(rpos) + ', '
 
-            if 'tp' in all_measures:
-                header1 = 'Tripolar thresholds: rpos values in columns; sigma = ' + str(sigmaVals[-1])
-                data_writer.writerow(header1)
-                data_writer.writerow(header2)
-                for row, s_val in enumerate(survVals):
-                    data_writer.writerow([row, s_val, thr_sim_db[row, 1]])
+                        data_writer.writerow(header1)
+                        data_writer.writerow(header2)
+                        for row, s_val in enumerate(survVals):
+                            data_writer.writerow([row, s_val, thr_sim_db[row, i,:]])
 
-            if 'mp_mcl' in all_measures:
-                header1 = 'Most comfortable levels: rpos values in columns; sigma = 0.0'
-                data_writer.writerow(header1)
-                data_writer.writerow(header2)
-                for row, s_val in enumerate(survVals):
-                    data_writer.writerow([row, s_val, m_level_db[row]])
+                if 'mp_mcl' in all_measures:
+                    header1 = 'Most comfortable levels: rpos values in columns; sigma = 0.0'
+                    data_writer.writerow(header1)
+                    data_writer.writerow(header2)
+                    for row, s_val in enumerate(survVals):
+                        data_writer.writerow([row, s_val, m_level_db[row]])
 
         data_file.close()
 
@@ -237,6 +232,14 @@ def fwd_model_2d(mode):
             np.savetxt(FWDOUTPUTDIR + 'Monopolar_2D_' + STD_TEXT + es_text + '.csv', thr_sim_db[:, :, 0], delimiter=',')
         if 'tp' in all_measures:
             np.savetxt(FWDOUTPUTDIR + 'Tripolar_09_2D_' + STD_TEXT + es_text + '.csv', thr_sim_db[:, :, 1], delimiter=',')
+
+        if 'threshold' in all_measures:
+            # loop on sigma values
+            for i in range(0, na_sig):  # number of sigma values to test
+                sigval = all_sigs[i]
+                sigtext = f"{sigval:.1f}".replace(".", "_")
+                filename = FWDOUTPUTDIR + '2D_' + sigtext + '_' + STD_TEXT + es_text + '.csv'
+                np.savetxt(filename, thr_sim_db[:, :, i], delimiter=',')
         if 'mp_mcl' in all_measures:
             np.savetxt(FWDOUTPUTDIR + 'MP_mcl_2D_' + STD_TEXT + es_text + '.csv', m_level_db[:, :], delimiter=',')
 
