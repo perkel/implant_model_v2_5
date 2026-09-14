@@ -228,10 +228,10 @@ def fwd_model_2d(mode):
 
         data_file.close()
 
-        if 'mp' in all_measures:
-            np.savetxt(FWDOUTPUTDIR + 'Monopolar_2D_' + STD_TEXT + es_text + '.csv', thr_sim_db[:, :, 0], delimiter=',')
-        if 'tp' in all_measures:
-            np.savetxt(FWDOUTPUTDIR + 'Tripolar_09_2D_' + STD_TEXT + es_text + '.csv', thr_sim_db[:, :, 1], delimiter=',')
+        # Note: the old 'mp'/'tp' save block that used to live here hardcoded thr_sim_db[:, :, 1] as
+        # "Tripolar_09", which only matches all_sigs[1] when all_sigs has exactly 2 entries ([0.0, 0.9]).
+        # With the current all_sigs = [0.0, 0.5, 0.9], index 1 is actually sigma=0.5, so that block was
+        # stale/mislabeled. It's superseded by the generic per-sigma loop below, which is always correct.
 
         if 'threshold' in all_measures:
             # loop on sigma values
