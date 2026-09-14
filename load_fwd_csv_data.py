@@ -11,7 +11,7 @@ from common_params import *
 def load_fwd_csv_data(loadfile, mode):
 
     thr_data = {'thrmp_db': np.zeros(NELEC), 'thrmp': np.zeros(NELEC), 'thrtp_db': np.zeros(NELEC),
-                'thrtp': np.zeros(NELEC), 'thrtp_sigma': 0.9, 'mp_mcl_db': np.zeros(NELEC)}
+                'thrtp': np.zeros(NELEC), 'thrtp_sigma': TP_SIGMA, 'mp_mcl_db': np.zeros(NELEC)}
     ct_data = {'stdiameter': [], 'scala': [], 'elecdist': [], 'espace': 1.1, 'type': [], 'insrt_base': [],
                'insert_apex': []}
 
