@@ -394,7 +394,6 @@ def fig9_summary():
 
     scen_single = "A022R"
 
-    ## TODO
     col_to_extract = 7
     fp = INVOUTPUTDIR + scen_single + "_fitResults_combined.csv"
     # get correct column from INV_OUT CSV file and put the values in rpos_single
@@ -402,7 +401,6 @@ def fig9_summary():
     # third figure for single case
     fig3 = plt.subplots(2, 2, figsize=(7, 12))
     # fig3.tight_layout(pad=3)
-
 
     dist_single = 1- rpos_single
     corr_fit_dist_single = correct_error(dist_single,result_sing.params)
