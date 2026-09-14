@@ -39,6 +39,11 @@ def calc_ecap(act_vals, field_params, sim_params, thresh, thr_sim_db, n_stim):
 
     ecap = np.zeros([nelec, n_stim, 2])
 
+    # Precompute once: depends only on sim_params['neurons']['rlvl'], which doesn't change across
+    # electrodes or stimulus currents below, but thr_function.thr_function() is called nelec * n_stim
+    # times (n_stim can be in the thousands), so recomputing it inline each time was wasted work.
+    prop_const = thr_function.compute_prop_const(sim_params)
+
     # Loop on electrodes
     for k in range(nelec):
         sim_params['channel']['number'] = k
@@ -52,6 +57,6 @@ def calc_ecap(act_vals, field_params, sim_params, thresh, thr_sim_db, n_stim):
         # a, b = thr_function.thr_function(db_to_cur(22), e_field, sim_params)[0:2]
         for i, cur in enumerate(currents):
             ecap[k, i, 0] = cur_to_db(cur)
-            ecap[k, i, 1] = thr_function.thr_function(cur, e_field, sim_params)[0]
+            ecap[k, i, 1] = thr_function.thr_function(cur, e_field, sim_params, prop_const)[0]
 
     return ecap
