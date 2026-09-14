@@ -6,8 +6,8 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
-table1 = 'v_tables/16June2024_MedResolution_Rext250_Rint250_nonans.dat'
-table2 = 'v_tables/18May2024_MedResolution_Rext70_nonans.dat'
+table1 = '../implant_model_v2_3/v_tables/11March2025_MedResolution_Rext250_Rint70.dat'
+table2 = 'v_tables/16March2026_MedResolution_Rext250_Rint70_nonans.dat'
 
 with open(table1, 'rb') as combined_data:
     data = pickle.load(combined_data)
