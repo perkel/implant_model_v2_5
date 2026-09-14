@@ -17,12 +17,14 @@ M_level_target = 100
 TARG_TEXT = '_TARG' + str(round(THRTARG)) + '/'
 ACTR = 100
 ACTR_TEXT = '_ACTR' + str(round(ACTR)) + '_'
-ACT_STDREL = 2  # 0.6#0.01#0.7
+ACT_STDREL = 2.0  # 0.6#0.01#0.7
 STD_TEXT = 'STDR' + str(ACT_STDREL)
 STD_TEXT = STD_TEXT.replace('.', '_')
 
 # File locations
 sigmaVals = [0.0, 0.9]  # Always explore monopolar stimulation and one value of sigma for triploar
+# sigmaVals is overridden if we're working on a subject, because we have specific values for them
+all_sigs = [0.0, 0.5, 0.9]
 # can be overridden for individual subjects
 # behaviorVals = [0, 0]  # change to [0,1] if looking at M levels
 
@@ -31,7 +33,7 @@ electrodes = {'source': 'manual', 'timestamp': [], 'zpos': [], 'rpos': []}
 NEURONS = {'act_ctr': ACTR, 'act_stdrel': ACT_STDREL, 'nsurvival': [], 'sidelobe': 1, 'neur_per_clust': 10,
            'rlvl': [], 'rule': 'proportional', 'coef': 0.0, 'power': 1.0, 'thrtarg': THRTARG, 'M_targ': M_level_target}
 # For COEF convex: <0 | 0.4, 0.9  linear: 0 | 1; concave: >0 | 1.0, 1.8
-CHANNEL = {'source': 'manual', 'behavior': 0, 'number': range(0, NELEC), 'config': 'pTP', 'sigma': 0.9, 'alpha': 0.5,
+CHANNEL = {'source': 'manual', 'behavior': 0, 'number': range(0, NELEC), 'config': 'pTP', 'sigma': sigmaVals[0], 'alpha': 0.5,
            'current': 10000000000.0}
 GRID = {'r': 0.1, 'th': 0.0, 'z': np.arange(0, 33, 0.01)}  # mm
 
@@ -40,7 +42,11 @@ GRID = {'r': 0.1, 'th': 0.0, 'z': np.arange(0, 33, 0.01)}  # mm
 # fit_using_val = 'mp' and 'tp'  # could include any or all of these three types of data
 
 # all_measures = {'mp': True, 'tp': True, 'mp_mcl': True, 'ecap': True}  # measures calculated by the forward model
-all_measures = {'mp': True, 'tp': True}  # measures calculated by the forward model
+# all_measures = {'mp': True, 'tp': True}  # measures calculated by the forward model
+all_measures = {'threshold': True}
+# new system 17 June 2026. all_measures can now have 'threshold', 'mcl' and/or 'ecap'
+# for 'threshold', all sigma values in all_sigs will be calculated by fwd_model and fwd_model_2d
+# This allows us to have 2D models read for any subjects with 0.0, 0.5 or 0.9 sigma values
 fit_measures = {'mp': 1.0, 'tp': 1.0, 'mp_mcl': 0.0, 'ecap': 0.0}  # measure weights for fitting with the inverse model
 RUN_INFO = {'scenario': 'scenario', 'run_time': [], 'run_duration': 0.0, 'fit_measures': fit_measures}
 global simParams
@@ -79,7 +85,7 @@ global scenarios
 # scenarios = ['RampRposS80']
 # scenarios = ['RampRpos2SGradual80']
 # scenarios = ['RampRposSOneHoleGradual80']
-
+scenarios = ['subject_2596']
 # scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80']  # for paper figure 6
 # scenarios = ['RampRposSGradual80']  # for paper figure 6
 # scenarios = ['Gradual2_80R00']
@@ -97,7 +103,7 @@ global scenarios
 
 # Actual subject data. For inverse model only
 # scenarios = ['A023R']  # paper "good fit" examples. Figure 7
-scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80', 'S22','S29','S38','S40', 'S41','S42','S43','S46','S47','S48','S49R','S50','S52','S53','S54','S55','S56','S57']
+# scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80', 'S22','S29','S38','S40', 'S41','S42','S43','S46','S47','S48','S49R','S50','S52','S53','S54','S55','S56','S57']
 # scenarios = ['S29', 'S56']  # paper "poor fit" examples. Figure 8
 # scenarios = ['A002R', 'A005L', 'A014L', 'A022L', 'A022R', 'A023R', 'A024L']
 #scenarios = ['S42_test']
@@ -110,7 +116,22 @@ scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80', 'S22','S29','S
 #              'S43', 'S44', 'S46', 'S47', 'S49R', 'S50', 'S52', 'S53', 'S54', 'S55', 'S56', 'S57']
 # scenarios = ['RampRposSGradual80', 'S22', 'S42',]
 
-# scenarios = ['A039L']
+# scenarios = ['A014L']
+# scenarios = ['A014L_constrained']
+# scenarios = ['A014L_constrained_corrected']
+# scenarios = ['A022L']
+# scenarios = ['A022L_constrained']
+# scenarios = ['A022L_constrained_corrected']
+# scenarios = ['A022R']
+# scenarios = ['A022R_constrained']
+# scenarios = ['A022R_constrained_corrected']
+# scenarios = ['A035R']
+# scenarios = ['A035R_constrained']
+# scenarios = ['A035R_constrained_corrected']
+# scenarios = ['A041']
+# scenarios = ['A041_constrained']
+# scenarios = ['A041_constrained_corrected']
+
 # File locations
 FWD_OUT_PRFIX = 'FWD_OUTPUT/'
 new_dir_suffix = RE_TEXT + '_' + RI_TEXT + 'std_%.1f' % ACT_STDREL + '_thr_%d' % THRTARG + '/'
