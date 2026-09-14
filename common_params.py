@@ -17,7 +17,7 @@ M_level_target = 100
 TARG_TEXT = '_TARG' + str(round(THRTARG)) + '/'
 ACTR = 100
 ACTR_TEXT = '_ACTR' + str(round(ACTR)) + '_'
-ACT_STDREL = 2.0  # 0.6#0.01#0.7
+ACT_STDREL = 0.6  # 0.6#0.01#0.7
 STD_TEXT = 'STDR' + str(ACT_STDREL)
 STD_TEXT = STD_TEXT.replace('.', '_')
 
@@ -26,6 +26,7 @@ sigmaVals = [0.0, 0.9]  # Always explore monopolar stimulation and one value of 
 # sigmaVals is overridden if we're working on a subject, because we have specific values for them
 all_sigs = [0.0, 0.5, 0.9]
 # can be overridden for individual subjects
+TP_SIGMA = sigmaVals[-1]  # standard partial-tripolar sigma value; use this instead of hardcoding 0.9 elsewhere
 # behaviorVals = [0, 0]  # change to [0,1] if looking at M levels
 
 COCHLEA = {'source': 'manual', 'timestamp': [], 'radius': []}
@@ -85,8 +86,8 @@ global scenarios
 # scenarios = ['RampRposS80']
 # scenarios = ['RampRpos2SGradual80']
 # scenarios = ['RampRposSOneHoleGradual80']
-scenarios = ['subject_2596']
-# scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80']  # for paper figure 6
+# scenarios = ['subject_2596']
+scenarios = ['Gradual80R00', 'RampRposS80', 'RampRposSGradual80']  # for paper figure 6
 # scenarios = ['RampRposSGradual80']  # for paper figure 6
 # scenarios = ['Gradual2_80R00']
 # scenarios=['Gradual80R-75']
