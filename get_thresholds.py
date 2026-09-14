@@ -58,6 +58,11 @@ def get_thresholds(field_table: object, field_params: object, sim_params: object
     nvalarray = []
     nvals = 0
 
+    # Precompute once: depends only on sim_params['neurons']['rlvl'], not on stim electrode
+    # or current, but thr_function is called many times below (once per solver iteration,
+    # for every electrode), so recomputing it inline each time was wasted work.
+    prop_const = thr_f.compute_prop_const(sim_params)
+
     for j in elec_vals:  # Loop on stimulating electrodes
         sim_params['channel']['number'] = j
         aprofile = c3dm.cylinder3d_makeprofile(field_table, field_params, sim_params)
@@ -91,7 +96,7 @@ def get_thresholds(field_table: object, field_params: object, sim_params: object
         lastpos = nextstim
         lastneg = 0.0
         while np.abs(error) > fit_precision:
-            [n_neur, nvals, _aa] = thr_f.thr_function(nextstim, e_field, sim_params)
+            [n_neur, nvals, _aa] = thr_f.thr_function(nextstim, e_field, sim_params, prop_const)
             # returns nCount, NeuralProfile, ActiveProfile
             error = n_neur - target
             if error < -fit_precision:  # want to increase stim
@@ -109,7 +114,7 @@ def get_thresholds(field_table: object, field_params: object, sim_params: object
 
         # Here call thrFunction to get the neural profile at threshold
         if len(thresholds) > 1:
-            profileval = thr_f.thr_function(thresholds[j], e_field, sim_params)[1]
+            profileval = thr_f.thr_function(thresholds[j], e_field, sim_params, prop_const)[1]
             nvalarray.append(profileval)
 
     thresholds = 20 * np.log10(thresholds)  # return thresholds in dB
