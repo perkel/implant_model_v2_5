@@ -15,6 +15,7 @@ import io
 import os
 import pickle
 import pstats
+import time
 import concurrent.futures as cf
 from datetime import datetime
 from pstats import SortKey
@@ -29,14 +30,34 @@ def goldwyn_beta(eps, k2, rs, re, n):
     # 'n' may be a scalar or an array of orders -- scipy.special's Bessel functions broadcast
     # over the order argument, so passing the full array of orders at once (see integ_func below)
     # computes all of them in one vectorized call instead of one Python-level call per order.
+    #
+    # Numerical note: for small k2 (the quadrature variable can get very close to the lower
+    # integration bound, ~1e-12) combined with high order n, I_n(krs) underflows to exactly 0.0
+    # while K_n(krs)/K_n'(krs) overflow to +-inf (small-argument Bessel asymptotics: I_n(z) ~
+    # (z/2)^n/n! -> 0, K_n(z) ~ (n-1)!/2 * (2/z)^n -> inf as z -> 0, and both blow up/vanish faster
+    # for larger n). That makes 'denom' below hit an IEEE inf*0 = nan for the highest orders in
+    # exactly this regime -- confirmed to happen in real runs (not just a theoretical edge case),
+    # e.g. order 46 at krs ~ 8.3e-6. Where I_n(krs) has genuinely underflowed to 0.0, the true
+    # physical contribution of that order is astronomically small, so we force it to exactly 0
+    # instead of letting the inf*0 corruption through -- verified to reproduce the correct,
+    # smoothly-varying result (checked against neighboring z values) with zero effect anywhere
+    # the computation was already stable.
     krs = k2 * rs
-    denom = ((eps * spec.kvp(n, krs) * spec.iv(n, krs)) - (spec.kn(n, krs) * spec.ivp(n, krs)))
-    return spec.iv(n, k2 * re) / (denom * krs)
+    with np.errstate(invalid='ignore'):
+        iv_krs = spec.iv(n, krs)
+        denom = ((eps * spec.kvp(n, krs) * iv_krs) - (spec.kn(n, krs) * spec.ivp(n, krs)))
+        result = spec.iv(n, k2 * re) / (denom * krs)
+    negligible = (iv_krs == 0.0)
+    return result, negligible
 
 
 def goldwyn_phi(eps, k, rs, re, reval, n):  # Note Goldwyn alpha is zero for eval pt. outide cylinder
-    phi = (goldwyn_beta(eps, k, rs, re, n) * spec.kn(n, k * reval))
-    return phi
+    beta, negligible = goldwyn_beta(eps, k, rs, re, n)
+    with np.errstate(invalid='ignore'):
+        phi = beta * spec.kn(n, k * reval)
+    # See the note in goldwyn_beta: force genuinely-negligible orders to exactly 0 rather than
+    # propagating a NaN from either this multiplication or the one inside goldwyn_beta.
+    return np.where(negligible, 0.0, phi)
 
 
 def integ_func(x, m_max, pratio, rad, reval, z, theta, relec):  # This is the Bessel function along z axis
@@ -95,6 +116,12 @@ def _process_electrode(i, r_elec, z_eval, m_max, res_ratio, cyl_radius, reval_ba
 
 if __name__ == '__main__':
     # See Rubinstein dissertation, 1988, Ch 6.
+
+    run_start_time = time.perf_counter()  # wall-clock timer for the entire run (see the end of this
+    # block for where it's reported). This is a proper wall-clock measurement covering the whole run,
+    # including the parallelized electrode-position loop -- unlike the cProfile-based 'run_duration'
+    # previously stored below, which only measures CPU time in the main process and therefore massively
+    # under-counts the real time once the heavy computation moved into worker processes.
 
     # Main parameters to vary
     radius = 1.0  # cylinder radius
@@ -191,7 +218,10 @@ if __name__ == '__main__':
     print(s.getvalue())
 
     # Save the data into a single file
-    fp['run_duration'] = ps.total_tt  # Place run duration in field parameters
+    # Note: ps.total_tt (cProfile's cumulative CPU time) only covers the main process -- the actual
+    # per-electrode computation above now runs in worker processes and isn't included in it, so it
+    # would badly under-report the real time since parallelization. Use the wall-clock timer instead.
+    fp['run_duration'] = time.perf_counter() - run_start_time  # Place run duration in field parameters
     with open(fp['runOutFile'], 'wb') as combined_data:
         pickle.dump([fp, voltage_vals, activation_vals], combined_data)  # Save all data
     combined_data.close()
@@ -203,6 +233,9 @@ if __name__ == '__main__':
         print('These have been replaced by interpolated values in a new file with no_nans appended to the filename.')
     else:
         print('Complete: No nans are in the file.')
+
+    run_elapsed_time = time.perf_counter() - run_start_time
+    print(f'Total run duration: {run_elapsed_time:.1f} s ({run_elapsed_time / 60:.2f} min)')
 
     if if_plot:
         # Some plots that might be helpful
