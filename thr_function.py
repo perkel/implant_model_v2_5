@@ -28,19 +28,19 @@ def new_sigmoid(actr, std, x):  # scaled to subtract the y-intercept and still a
     return yval
 
 
-def compute_prop_const(rpos_vals):
+def compute_prop_const(sim_par):
     """Proportionality constant used by create_neural_profile's 'proportional' rule.
-    It depends only on rpos_vals['neurons']['rlvl'], not on 'current', so callers that
+    It depends only on sim_par['neurons']['rlvl'], not on 'current', so callers that
     invoke thr_function repeatedly with the same sim_params (e.g. the iterative solver
     in get_thresholds.py) should compute this once and pass it in via thr_function's/
     create_neural_profile's 'prop_const' argument instead of recomputing it every call."""
-    rlvltable = rpos_vals['neurons']['rlvl']
+    rlvltable = sim_par['neurons']['rlvl']
     return rlvltable[1][-1] / rlvltable[0][-1]
 
 
-def create_neural_profile(active_profile, rpos_vals, prop_const=None):
-    # Extract local values from rpos_vals structure
-    neurons = rpos_vals['neurons']
+def create_neural_profile(active_profile, sim_par, prop_const=None):
+    # Extract local values from sim_par structure
+    neurons = sim_par['neurons']
     act_ctr = neurons['act_ctr']
     act_std = act_ctr * neurons['act_stdrel']
     nsurvival = neurons['nsurvival']
@@ -53,7 +53,7 @@ def create_neural_profile(active_profile, rpos_vals, prop_const=None):
     if neurons['rule'] == 'proportional':
         atemp = new_sigmoid(act_ctr, act_std, active_profile)
         if prop_const is None:  # not hoisted by the caller, so compute it here as before
-            prop_const = compute_prop_const(rpos_vals)
+            prop_const = compute_prop_const(sim_par)
         neural_out = np.multiply(atemp*prop_const, nsurvival)
     else:  # could add other models here
         raise ValueError('Neural excitation model not recognized.')
