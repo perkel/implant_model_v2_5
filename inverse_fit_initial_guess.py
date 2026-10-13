@@ -94,9 +94,6 @@ def estimate_initial_guesses(thresh_summary_full, scen, mono_thr, tripol_thr, si
             print('electrode: ', i, ";  no solutions. Closest: ", mp_idx, ' and ', tp_idx,
                   ' , OVERRIDING to: (position, survival): ', rp_guess, sv_guess)
 
-            # TODO change me back after testing
-            rp_guess = -.5
-            sv_guess = 0.8
             print('electrode: ', i, ';  no solutions. OVERRIDING to: (position, survival): ', rp_guess, sv_guess)
 
         elif nsols[i] == 1:  # unique solution
