@@ -119,7 +119,12 @@ def set_scenario(this_scen, n_elec):
             rpos_vals = np.zeros(n_elec) - 0.3
         elif this_scen == 'ExtremeHole':
             surv_vals = [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.8, 0.8, 0.8, 0.6, 0.4, 0.4, 0.6, 0.8, 0.8, 0.8]
-            rpos_vals = np.zeros(n_elec)
+        elif this_scen == 'RealisticHole_50_10':
+            surv_vals = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+            rpos_vals = np.zeros(n_elec) + 0.5
+        elif this_scen == 'RealisticHole_20_0':
+            surv_vals = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+            rpos_vals = np.zeros(n_elec) + 0.5
         elif this_scen == 'subject_2596':
             rpos_vals = np.array([0.87769811, 0.79012327, 0.39010671, -0.02793052, -0.22808854, -0.25158784,
                 -0.1396573, 0.04036908, 0.21766321, 0.52362401, 0.85145473, 0.82622878, 0.74981766,
