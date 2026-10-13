@@ -5,8 +5,8 @@ from common_params import *
 import numpy as np
 import csv
 
-f1 = '15/Tripolar_09_2D_STDR8_0_espace_085.csv'
-f2 = 'Tripolar_09_2D_STDR8_0_espace_085.csv'
+f1 = '2D_0_5_STDR0_6_espace_110.csv'
+f2 = '2D_0_9_STDR0_6_espace_110.csv'
 
 # Load monopolar data
 datafile = FWDOUTPUTDIR + f1
