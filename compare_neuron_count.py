@@ -36,21 +36,21 @@ def compare_neuron_count(subject):
             # Temp fixup
             fp['zEval'] = np.array(fp['zEval'])
             act_vals = data[2]  # the data[1] has voltage values, which we are ignoring here
-            simParams['grid']['table'] = act_vals
+            sim_params['grid']['table'] = act_vals
             GRID['table'] = act_vals
             COCHLEA['res1'] = fp['resInt'] * np.ones(NELEC)  # Note these valus do not match thos of Goldwyn et al., 2010
             COCHLEA['res2'] = fp['resExt'] * np.ones(NELEC)  # resistivities are in Ohm*cm (conversion to Ohm*mm occurs later)
             GRID['r'] = fp[
                 'rspace']  # only 1 of the 3 cylindrical dimensions can be a vector (for CYLINDER3D_MAKEPROFILE)
-            survVals = fit_survival#
+            surv_vals = fit_survival#
 
-            rposVals = fit_distance #CT_data #make sure to subtract from 1 if plotting
+            rpos_vals = fit_distance #CT_data #make sure to subtract from 1 if plotting
             MP_data=fit_MP
             TP_data=fit_TP
 
             hires = '_hi_res'
-            nSurv = len(survVals)
-            nRpos = len(rposVals)
+            n_surv = len(surv_vals)
+            n_rpos = len(rpos_vals)
             ##
             electrodes['rpos'] = np.zeros(NELEC)
             erb_empirical_array_M = []
@@ -59,28 +59,28 @@ def compare_neuron_count(subject):
             array_base = -(np.arange(NELEC - 1, -1, -1) * espace)
             array_mid = (array_base[0] + array_base[-1]) / 2.0
             electrodes['zpos'] = (ELEC_MIDPOINT - array_mid) + array_base
-            electrodes['rpos']=rposVals
+            electrodes['rpos']=rpos_vals
             ##
             # electrodes['zpos'] = ELEC_BASALPOS - (np.arange(NELEC - 1, -1, -1) * espace)
             #CHANNEL['timestamp'] = datetime.datetime.now()
             COCHLEA['radius'] = np.ones(NELEC) * fp['cylRadius']  # rpos is in mm, so be sure they fit inside the radius
-            simParams['cochlea'] = COCHLEA
-            simParams['electrodes'] = electrodes
-            simParams['channel'] = CHANNEL
-            simParams['grid'] = GRID
+            sim_params['cochlea'] = COCHLEA
+            sim_params['electrodes'] = electrodes
+            sim_params['channel'] = CHANNEL
+            sim_params['grid'] = GRID
             avec = np.arange(0, 1.01, .01)  # create the neuron count to neuron spikes transformation
             rlvec = NEURONS['coef'] * (avec ** 2) + (1 - NEURONS['coef']) * avec
             rlvec = NEURONS['neur_per_clust'] * (rlvec ** NEURONS['power'])
             rlvltable = np.stack((avec, rlvec))  # start with the e-field(s) created above, but remove the current scaling
-            n_sig = len(sigmaVals)
+            n_sig = len(sigma_vals)
             #thr_sim_db = np.empty((nSurv, nRpos, n_sig))  # Array for threshold data for different elecs and sigma values
            # thr_sim_db[:] = np.nan
             #neuronact = np.empty((nSurv, nRpos, n_sig, 1, len(GRID['z'])))  # Only 1 electrode in this model
            # neuronact[:] = np.nan
-            simParams['neurons']['rlvl'] = rlvltable
+            sim_params['neurons']['rlvl'] = rlvltable
            # comparisons = np.zeros((nRpos, 15,2)) #change if upping the targets
-            simParams['neurons']['nsurvival'] = \
-                surv_full.surv_full(simParams['electrodes']['zpos'], survVals, simParams['grid']['z'])
+            sim_params['neurons']['nsurvival'] = \
+                surv_full.surv_full(sim_params['electrodes']['zpos'], surv_vals, sim_params['grid']['z'])
 
             #    print('surv  ', j, ' of ', len(survVals))
                # #Get survival values for all 330 clusters from the 16 values at electrode positions
@@ -101,10 +101,10 @@ def compare_neuron_count(subject):
             n_electrodes=16
             MP_vals=[]
             electrode_positions = (np.arange(n_electrodes) - (n_electrodes - 1) / 2) * espace
-            for j, surv in enumerate(survVals):
-                simParams['channel']['number'] = j
-                simParams['channel']['sigma']=0
-                aprofile = c3dm.cylinder3d_makeprofile(act_vals, fp, simParams)
+            for j, surv in enumerate(surv_vals):
+                sim_params['channel']['number'] = j
+                sim_params['channel']['sigma']=0
+                aprofile = c3dm.cylinder3d_makeprofile(act_vals, fp, sim_params)
                 e_field = abs(aprofile)
 
                 #for k in range(len(elec_vals)):
@@ -113,8 +113,8 @@ def compare_neuron_count(subject):
                     # Call function and get n_neur
                 #n_neur, nvals, _aa = thr_f.thr_function(M_levels_uA[j], e_field, simParams)
                # MP_vals[j]=gt.get_thresholds(act_vals, fp, simParams)
-                n_neur_offsets, nvals_offsets, _aa_offsets = thr_f.thr_function(M_levels_uA_offsets[j], e_field, simParams)
-                n_neur_MP, nvals_MP, _aa_MP = thr_f.thr_function(MP_uA[j], e_field,simParams)
+                n_neur_offsets, nvals_offsets, _aa_offsets = thr_f.thr_function(M_levels_uA_offsets[j], e_field, sim_params)
+                n_neur_MP, nvals_MP, _aa_MP = thr_f.thr_function(MP_uA[j], e_field,sim_params)
                 area_M = np.trapz(nvals_offsets / 10, x=posvals)  # Area under the curve
                 peak_M = np.max(nvals_offsets / 10)  # Peak response
 
@@ -199,7 +199,7 @@ def compare_neuron_count(subject):
                     if j < 4:
                         #label_text_1 = f"sim Thresholds (dB): : {MP_data[j]: .2f} \nSurvVals: {survVals[j]: .2f}" #\n {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
                         #label_text_1 = f"dist: {1-rposVals[j]:.2f} \nM(CU): {M_levels[j]: .2f} \nM (uA): {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
-                        label_text_1=f"dist: {1-rposVals[j]: .2f} \nSurv: {survVals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"
+                        label_text_1=f"dist: {1-rpos_vals[j]: .2f} \nSurv: {surv_vals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"
                     #    label_text_2 = f"T neur: {n_neur_offsets_MP_results[j][1]: .2f} \nERB: : {erb_empirical_T: .2f} \n WHP: {half_peak_width_T:.2f}"
                         axs[0,j].plot(posvals,nvals_offsets/10, label = label_text_1)
                         axs[0,j].plot(posvals, nvals_MP/10)
@@ -218,7 +218,7 @@ def compare_neuron_count(subject):
                     elif j > 3 and j < 8:
                         #label_text_1 = f"sim M dB: : {MP_data[j]: .2f} \nSurvVals: {survVals[j]: .2f}" #\n {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
                         # label_text_1 = f"dist: {1-rposVals[j]:.2f} \nM(CU): {M_levels[j]: .2f} \nM (uA): {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
-                        label_text_1 = f"fit dist: {1 - rposVals[j]: .2f} \nSurv: {survVals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"# \nERB: : {erb_empirical_M: .2f} \n WHP: {half_peak_width_M:.2f}"
+                        label_text_1 = f"fit dist: {1 - rpos_vals[j]: .2f} \nSurv: {surv_vals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"# \nERB: : {erb_empirical_M: .2f} \n WHP: {half_peak_width_M:.2f}"
                       #  label_text_2=f"T neur: {n_neur_offsets_MP_results[j][1]: .2f} \nERB: : {erb_empirical_T: .2f} \n WHP: {half_peak_width_T:.2f}"
                         axs[1, j-4].plot(posvals,nvals_offsets/10, label = label_text_1)
                         axs[1,j-4].plot(posvals, nvals_MP/10)
@@ -238,7 +238,7 @@ def compare_neuron_count(subject):
                     elif j > 7 and j<12:
                         #label_text_1 = f"sim M dB: : {MP_data[j]: .2f} \nSurvVals: {survVals[j]: .2f}" #label_text_1 = f"dist: {1 - rposVals[j]:.2f} \nsim T dB: : {MP_data[j]: .2f}"# \nSurvVals: {survVals[j]: .2f}"  # \n {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
                         # label_text_1 = f"dist: {1-rposVals[j]:.2f} \nM(CU): {M_levels[j]: .2f} \nM (uA): {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
-                        label_text_1 = f" fit dist: {1 - rposVals[j]: .2f} \nSurv: {survVals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"# \nERB: : {erb_empirical_M: .2f} \n WHP: {half_peak_width_M:.2f}"
+                        label_text_1 = f" fit dist: {1 - rpos_vals[j]: .2f} \nSurv: {surv_vals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"# \nERB: : {erb_empirical_M: .2f} \n WHP: {half_peak_width_M:.2f}"
                       #  label_text_2 = f"T neur: {n_neur_offsets_MP_results[j][1]: .2f} \nERB: : {erb_empirical_T: .2f} \n WHP: {half_peak_width_T:.2f}"
                         axs[2, j-8].plot(posvals,nvals_offsets/10, label = label_text_1)
                         axs[2,j-8].plot(posvals, nvals_MP/10)
@@ -256,7 +256,7 @@ def compare_neuron_count(subject):
                         #axs[2, j - 8].legend(fontsize=6)
 
                     else:
-                        label_text_1 = f"fit dist: {1 - rposVals[j]: .2f} \nSurv: {survVals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"# \nERB: : {erb_empirical_M: .2f} \n WHP: {half_peak_width_M:.2f}"
+                        label_text_1 = f"fit dist: {1 - rpos_vals[j]: .2f} \nSurv: {surv_vals[j]: .2f} \n#neur: {n_neur_offsets_results[j][1]: .2f}"# \nERB: : {erb_empirical_M: .2f} \n WHP: {half_peak_width_M:.2f}"
                       #  label_text_2 = f"T neur: {n_neur_offsets_MP_results[j][1]: .2f} \nERB: : {erb_empirical_T: .2f} \n WHP: {half_peak_width_T:.2f}"
                         #label_text_1 = f"sim M dB: : {MP_data[j]: .2f} \nSurvVals: {survVals[j]: .2f}" #label_text_1 = f"dist: {1 - rposVals[j]:.2f} \nsim T dB: {MP_data[j]: .2f}"# \nSurvVals: {survVals[j]: .2f}"  # \n {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
                         # label_text_1 = f"dist: {1-rposVals[j]:.2f} \nM(CU): {M_levels[j]: .2f} \nM (uA): {M_levels_uA_offsets[j]:.2f} \nM(dB): {M_levels_dB_offset[j]:.2f} \nN count: {n_neur_offsets_results[j][1]:.2f}"
@@ -288,7 +288,7 @@ def compare_neuron_count(subject):
         if plotfigs=='True':
 
             fig, axes = plt.subplots(1, 3, figsize=(10, 4))  # (rows, columns)
-            for k in range(nRpos):
+            for k in range(n_rpos):
                 if n_neur_offsets_results[k,1]==0:
                     continue
                 else:
@@ -298,10 +298,10 @@ def compare_neuron_count(subject):
                 #axes[0, 1].axhline(y=100, color='r', linestyle='--')
                     axes[0].plot(M_levels_offsets[k], n_neur_offsets_results[k, 1], marker='o', linestyle='-', alpha=0.5)
                     axes[0].axhline(y=100, color='r', linestyle='--')
-                    axes[2].plot(M_levels_dB_offset[k], n_neur_offsets_results[k, 1], marker='o', linestyle='-', alpha=0.5,label=f'dist = {(1-rposVals[k]):.2f}')
+                    axes[2].plot(M_levels_dB_offset[k], n_neur_offsets_results[k, 1], marker='o', linestyle='-', alpha=0.5,label=f'dist = {(1-rpos_vals[k]):.2f}')
                     axes[2].axhline(y=100, color='r', linestyle='--')
                     axes[1].plot(M_levels_uA_offsets[k], n_neur_offsets_results[k, 1], marker='o', linestyle='-', alpha=0.5,
-                                    label=f'dist = {(1 - rposVals[k]):.2f}')
+                                    label=f'dist = {(1 - rpos_vals[k]):.2f}')
                     axes[1].axhline(y=100, color='r', linestyle='--')
                     # Red dotted line at y = 100
 
@@ -335,7 +335,7 @@ def compare_neuron_count(subject):
 
 
 #    print(f"{n_neur}", f"{n_neur_offsets_results}")
-    return [n_neur_offsets_MP_results, n_neur_offsets_results, survVals, rposVals] #probably also want to return dist and survival and M level db
+    return [n_neur_offsets_MP_results, n_neur_offsets_results, surv_vals, rpos_vals] #probably also want to return dist and survival and M level db
 
 #if __name__ == '__main__':
 # compare_neuron_count('main')  # alternatives are 'main', 'gui' and "survey'
