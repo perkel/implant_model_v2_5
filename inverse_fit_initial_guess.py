@@ -150,9 +150,4 @@ def estimate_initial_guesses(thresh_summary_full, scen, mono_thr, tripol_thr, si
     fitsurvvals[0] = fitsurvvals[1]
     fitsurvvals[-1] = fitsurvvals[-2]
 
-    ### TODO OVERRIDE for testing
-    # fitrposvals[:] = 0.5
-    # fitsurvvals[:] = 0.2
-    # fitsurvvals[7] = 0.0
-
     return fitrposvals, fitsurvvals
