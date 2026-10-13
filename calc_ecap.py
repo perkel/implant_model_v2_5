@@ -3,7 +3,7 @@
 
 import numpy as np
 from common_params import *
-import get_thresholds as gT
+import get_thresholds2 as gT
 import cylinder3d_makeprofile as c3dm
 import thr_function
 
